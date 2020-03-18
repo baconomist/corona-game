@@ -20,7 +20,7 @@ public static class Utils
 
     public static Vector3 Lerp(Vector3 val, float a, float b)
     {
-        return new Vector3(Mathf.Lerp(val.x, a, b),
-            Mathf.Lerp(val.y, a, b), Mathf.Lerp(val.z, a, b));
+        return new Vector3(Mathf.Lerp(a, b, val.x),
+            Mathf.Lerp(a, b, val.y), Mathf.Lerp(a, b, val.z));
     }
 }

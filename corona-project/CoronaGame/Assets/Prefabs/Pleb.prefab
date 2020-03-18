@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 2562172832955753418}
   - component: {fileID: 1638976032}
   - component: {fileID: 1638976031}
+  - component: {fileID: 2963624964381464978}
   m_Layer: 0
   m_Name: Pleb
   m_TagString: Untagged
@@ -92,7 +93,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ee24b5523e4919242829e9319046084e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  baseMaterial: {fileID: 2100000, guid: b674b324a268b8045b58882583ceffc2, type: 2}
+  infectedMaterial: {fileID: 2100000, guid: 7a5193cfddec9d94680a68ececf14a4e, type: 2}
+  infectedPlebs: {fileID: 0}
+  basePlebs: {fileID: 0}
   speed: 2
+  infectedSpeed: 5
+  infected: 0
 --- !u!54 &1638976032
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -122,3 +129,25 @@ BoxCollider:
   serializedVersion: 2
   m_Size: {x: 1, y: 1, z: 1}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!195 &2963624964381464978
+NavMeshAgent:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7288247970976325548}
+  m_Enabled: 1
+  m_AgentTypeID: 0
+  m_Radius: 0.5
+  m_Speed: 2
+  m_Acceleration: 8
+  avoidancePriority: 50
+  m_AngularSpeed: 120
+  m_StoppingDistance: 0
+  m_AutoTraverseOffMeshLink: 1
+  m_AutoBraking: 1
+  m_AutoRepath: 1
+  m_Height: 1
+  m_BaseOffset: 0.5
+  m_WalkableMask: 4294967295
+  m_ObstacleAvoidanceType: 4

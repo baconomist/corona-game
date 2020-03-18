@@ -12,7 +12,7 @@ public class Player : MonoBehaviour
 
     void Start()
     {
-        _camera = GetComponentInChildren<Camera>();
+        _camera = Camera.main;
 
         Cursor.lockState = CursorLockMode.Locked;
     }
@@ -26,13 +26,7 @@ public class Player : MonoBehaviour
         
         if (Input.GetKey(KeyCode.W))
             transform.position += transform.forward * Time.deltaTime * speed;
-        if (Input.GetKey(KeyCode.S))
-            transform.position -= transform.forward * Time.deltaTime * speed;
-        if(Input.GetKey(KeyCode.D))
-            transform.position += transform.right * Time.deltaTime * speed;
-        if(Input.GetKey(KeyCode.A))
-            transform.position -= transform.right * Time.deltaTime * speed;
-
+        
         transform.Rotate(0, Input.GetAxis("Mouse X"), 0);
     }
 

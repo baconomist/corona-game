@@ -3,23 +3,49 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Timers;
 using UnityEngine;
+using UnityEngine.AI;
+using UnityEngine.SceneManagement;
 using Random = UnityEngine.Random;
 
 public class Pleb : MonoBehaviour
 {
+    public Material baseMaterial;
+    public Material infectedMaterial;
+    public Transform infectedPlebs;
+    public Transform basePlebs;
+    
     public float speed = 3.0f;
+    public float infectedSpeed = 5.0f;
+    public bool infected = false;
 
     private RandomMovement _randomMovement;
+    private Transform _currentFollowingTransform = null;
+    private NavMeshAgent _nav;
+
+    private void OnValidate()
+    {
+        if (infected)
+            Infect();
+        else
+        {
+            GetComponent<MeshRenderer>().sharedMaterial = baseMaterial;
+        }
+
+        GetComponent<NavMeshAgent>().speed = speed;
+    }
 
     void Start()
     {
         _randomMovement = new RandomMovement(3000 + 2000 * Random.value, speed, transform);
+        _nav = GetComponent<NavMeshAgent>();
     }
 
     void Update()
     {
-        RandomMotion();
-        //FollowPlayer();
+        if (!infected)
+            RandomMotion();
+        else
+            FollowNearestEntity();
     }
 
     void RandomMotion()
@@ -29,10 +55,68 @@ public class Pleb : MonoBehaviour
 
     void FollowPlayer()
     {
+        FollowTransform(GameManager.Instance.player.transform);
+    }
+
+    void FollowNearestEntity()
+    {
+        if (basePlebs.childCount > 0)
+        {
+            Transform closest = basePlebs.GetChild(0);
+            foreach (Transform t in basePlebs.transform)
+            {
+                if (Vector3.Distance(transform.position, t.position) <
+                    Vector3.Distance(transform.position, closest.position))
+                {
+                    closest = t;
+                }
+            }
+
+            if (Vector3.Distance(transform.position, GameManager.Instance.player.transform.position) <
+                Vector3.Distance(transform.position, closest.position))
+            {
+                closest = GameManager.Instance.player.transform;
+            }
+
+            _currentFollowingTransform = closest;
+        }
+        else
+        {
+            _currentFollowingTransform = GameManager.Instance.player.transform;
+        }
+
+
+        if (_currentFollowingTransform != null)
+        {
+            //FollowTransform(_currentFollowingTransform);
+            _nav.speed = speed;
+            _nav.SetDestination(_currentFollowingTransform.position);
+        }
+    }
+
+    void FollowTransform(Transform t)
+    {
         // Keep the same direction to the player but keep distance constant(1.0f) via normalization
         Vector3 normalizedTranslateVec =
-            Vector3.Normalize(GameManager.Instance.player.transform.position - transform.position);
+            Vector3.Normalize(t.position - transform.position);
         transform.position += normalizedTranslateVec * Time.deltaTime * speed;
+    }
+
+    void Infect()
+    {
+        GetComponent<MeshRenderer>().sharedMaterial = infectedMaterial;
+        transform.parent = infectedPlebs.transform;
+        speed = infectedSpeed;
+        infected = true;
+    }
+
+    private void OnCollisionEnter(Collision other)
+    {
+        Pleb pleb = other.gameObject.GetComponent<Pleb>();
+        if(pleb != null && !pleb.infected)
+            pleb.Infect();
+        else if(infected && other.gameObject.GetComponent<Player>() != null)
+            GameManager.Instance.Restart();
     }
 
     class RandomMovement
@@ -70,7 +154,8 @@ public class Pleb : MonoBehaviour
         private void CalculateMoveBy()
         {
             int direction = Random.value > 0.5f ? -1 : 1;
-            moveBy = Utils.Clamp(Utils.Lerp(new Vector3(Random.value, Random.value, Random.value), 1.0f, 2.0f), 1.0f, 2.0f) *
+            moveBy = Utils.Clamp(Utils.Lerp(new Vector3(Random.value, Random.value, Random.value), 1.0f, 2.0f), 1.0f,
+                         2.0f) *
                      Time.deltaTime *
                      _speed * direction;
         }
