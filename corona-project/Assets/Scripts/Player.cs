@@ -11,14 +11,19 @@ public class Player : MonoBehaviour
     private Camera _camera;
     private ParticleSystem _particleSystem;
     private Animator _animator;
+    private BoxCollider _boxCollider;
 
     private bool _dead = false;
+    private Vector3 _cameraOffset;
 
     void Start()
     {
         _camera = Camera.main;
         _particleSystem = GetComponent<ParticleSystem>();
         _animator = GetComponentInChildren<Animator>();
+        _boxCollider = GetComponent<BoxCollider>();
+
+        _cameraOffset = _camera.transform.position - transform.position;
 
         Cursor.lockState = CursorLockMode.Locked;
     }
@@ -48,6 +53,11 @@ public class Player : MonoBehaviour
 
         transform.Rotate(0, Input.GetAxis("Mouse X"), 0);
     }
+    
+    private void FixedUpdate()
+    {
+        _camera.transform.position = transform.position + _cameraOffset;
+    }
 
     void TakeNearestItem()
     {
@@ -60,9 +70,9 @@ public class Player : MonoBehaviour
         _dead = true;
     }
 
-    private void FixedUpdate()
+    private void OnCollisionEnter(Collision other)
     {
-        _camera.transform.position =
-            new Vector3(transform.position.x, _camera.transform.position.y, transform.position.z);
+        if(other.gameObject.GetComponent<ShoppingCartItem>() != null)
+            Physics.IgnoreCollision(other.collider, _boxCollider);
     }
 }

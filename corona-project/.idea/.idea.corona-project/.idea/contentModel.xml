@@ -11,6 +11,8 @@
           <e p="GameManager.cs" t="Include" />
           <e p="Player.cs" t="Include" />
           <e p="Pleb.cs" t="Include" />
+          <e p="ShoppingCart.cs" t="Include" />
+          <e p="ShoppingCartItem.cs" t="Include" />
           <e p="Utils.cs" t="Include" />
         </e>
       </e>
