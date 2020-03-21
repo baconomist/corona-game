@@ -10,6 +10,7 @@
           <e p="Car.cs" t="Include" />
           <e p="GameAssets.cs" t="Include" />
           <e p="GameManager.cs" t="Include" />
+          <e p="InfectionCylinder.cs" t="Include" />
           <e p="Player.cs" t="Include" />
           <e p="Pleb.cs" t="Include" />
           <e p="Score.cs" t="Include" />

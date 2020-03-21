@@ -11,11 +11,14 @@ public class Pleb : MonoBehaviour
 {
     public Material baseMaterial;
     public Material infectedMaterial;
+    public Transform infectionCylinder;
     public Transform infectedPlebs;
     public Transform basePlebs;
-    
+
     public float speed = 3.0f;
     public float infectedSpeed = 5.0f;
+    public float infectionRadius = 3.0f;
+    public float infectionSpeed = 5.0f;
     public bool infected = false;
 
     private RandomMovement _randomMovement;
@@ -89,6 +92,16 @@ public class Pleb : MonoBehaviour
         if (_currentFollowingTransform != null)
         {
             //FollowTransform(_currentFollowingTransform);
+            if (Vector3.Distance(transform.position, _currentFollowingTransform.position) <= infectionRadius)
+            {
+                infectionCylinder.localScale +=
+                    new Vector3(Time.deltaTime * infectionSpeed, 0, Time.deltaTime * infectionSpeed);
+            }
+            else
+            {
+                infectionCylinder.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+            }
+
             _nav.speed = speed;
             _nav.SetDestination(_currentFollowingTransform.position);
         }
@@ -109,14 +122,12 @@ public class Pleb : MonoBehaviour
         speed = infectedSpeed;
         infected = true;
     }
-
-    private void OnCollisionEnter(Collision other)
+    public void OnInfectionCylinderCollided(Collider other)
     {
-        Pleb pleb = other.gameObject.GetComponent<Pleb>();
-        if(pleb != null && !pleb.infected)
-            pleb.Infect();
-        else if(infected && other.gameObject.GetComponent<Player>() != null)
+        if(other.gameObject.GetComponent<Player>() != null)
             GameManager.Instance.Restart();
+        else if (other.gameObject.GetComponent<Pleb>() != null)
+            other.gameObject.GetComponent<Pleb>().Infect();
     }
 
     class RandomMovement
