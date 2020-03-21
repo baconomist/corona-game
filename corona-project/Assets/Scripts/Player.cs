@@ -5,30 +5,43 @@ using UnityEngine;
 
 public class Player : MonoBehaviour
 {
+    public GameObject modelMasked;
+    public GameObject modelUnmasked;
+
     public float baseSpeed = 2.0f;
     public float sprintSpeed = 4.0f;
+    public bool isMasked = false;
 
     private Camera _camera;
     private ParticleSystem _particleSystem;
-    private Animator _animator;
+    private MultiAnimator _animator;
     private BoxCollider _boxCollider;
+
+    private ShoppingCart _shoppingCart;
 
     private bool _dead = false;
     private Vector3 _cameraOffset;
 
-    void Start()
+    private void OnValidate()
+    {
+        SetMasked(isMasked);
+    }
+
+    private void Start()
     {
         _camera = Camera.main;
         _particleSystem = GetComponent<ParticleSystem>();
-        _animator = GetComponentInChildren<Animator>();
+        _animator = new MultiAnimator(modelMasked.GetComponentInChildren<Animator>(), modelUnmasked.GetComponentInChildren<Animator>());
         _boxCollider = GetComponent<BoxCollider>();
+
+        _shoppingCart = GetComponentInChildren<ShoppingCart>();
 
         _cameraOffset = _camera.transform.position - transform.position;
 
         Cursor.lockState = CursorLockMode.Locked;
     }
 
-    void Update()
+    private void Update()
     {
         float speed = baseSpeed;
 
@@ -51,28 +64,61 @@ public class Player : MonoBehaviour
         if (Input.GetKey(KeyCode.F))
             TakeNearestItem();
 
+
         transform.Rotate(0, Input.GetAxis("Mouse X"), 0);
     }
-    
+
     private void FixedUpdate()
     {
         _camera.transform.position = transform.position + _cameraOffset;
     }
 
-    void TakeNearestItem()
+    private void TakeNearestItem()
     {
         _animator.SetTrigger("TakeItem");
     }
 
-    void Die()
+    private void Die()
     {
         _animator.SetTrigger("Die");
         _dead = true;
     }
 
+    private void SetMasked(bool masked)
+    {
+        modelMasked.SetActive(masked);
+        modelUnmasked.SetActive(!masked);
+        isMasked = masked;
+    }
+
+    public void EmptyCart()
+    {
+        _shoppingCart.EmptyItems();
+    }
+
     private void OnCollisionEnter(Collision other)
     {
-        if(other.gameObject.GetComponent<ShoppingCartItem>() != null)
+        if (other.gameObject.GetComponent<ShoppingCartItem>() != null)
             Physics.IgnoreCollision(other.collider, _boxCollider);
+    }
+
+    private class MultiAnimator
+    {
+        private Animator[] _animators;
+
+        public MultiAnimator(params Animator[] animators)
+        {
+            _animators = animators;
+        }
+
+        public void SetBool(string name, bool val)
+        {
+            foreach (Animator animator in _animators) animator.SetBool(name, val);
+        }
+        
+        public void SetTrigger(string name)
+        {
+            foreach (Animator animator in _animators) animator.SetTrigger(name);
+        }
     }
 }
