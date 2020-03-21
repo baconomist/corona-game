@@ -10,6 +10,7 @@ public class Player : MonoBehaviour
 
     public float baseSpeed = 2.0f;
     public float sprintSpeed = 4.0f;
+    public float itemReach = 2.0f;
     public bool isMasked = false;
 
     private Camera _camera;
@@ -75,6 +76,16 @@ public class Player : MonoBehaviour
 
     private void TakeNearestItem()
     {
+        foreach (Collider collider in Physics.OverlapSphere(transform.position, itemReach))
+        {
+            ShoppingCartItem shoppingCartItem = collider.gameObject.GetComponent<ShoppingCartItem>();
+            if (shoppingCartItem != null)
+            {
+                _shoppingCart.TeleportIntoCart(collider.gameObject);
+                shoppingCartItem.canAttachToCart = true;
+            }
+        }
+
         _animator.SetTrigger("TakeItem");
     }
 

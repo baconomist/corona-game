@@ -7,24 +7,24 @@ AvatarMask:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: TakeItemMask
-  m_Mask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+  m_Mask: 00000000010000000100000000000000000000000100000001000000010000000100000000000000000000000100000001000000
   m_Elements:
   - m_Path: 
     m_Weight: 1
   - m_Path: Armature
-    m_Weight: 1
+    m_Weight: 0
   - m_Path: Armature/footl.001
     m_Weight: 0
   - m_Path: Armature/footl.001/footl
-    m_Weight: 1
+    m_Weight: 0
   - m_Path: Armature/footl.001/footl/footl_end
-    m_Weight: 1
+    m_Weight: 0
   - m_Path: Armature/footr.001
     m_Weight: 0
   - m_Path: Armature/footr.001/footr
-    m_Weight: 1
+    m_Weight: 0
   - m_Path: Armature/footr.001/footr/footr_end
-    m_Weight: 1
+    m_Weight: 0
   - m_Path: Armature/forarml.001
     m_Weight: 1
   - m_Path: Armature/forarml.001/forarml.001_end
@@ -68,35 +68,35 @@ AvatarMask:
   - m_Path: Armature/hipl
     m_Weight: 0
   - m_Path: Armature/hipl/leg2l
-    m_Weight: 1
+    m_Weight: 0
   - m_Path: Armature/hipl/leg2l/leg1l
-    m_Weight: 1
+    m_Weight: 0
   - m_Path: Armature/hipl/leg2l/leg1l/leg1l_end
-    m_Weight: 1
+    m_Weight: 0
   - m_Path: Armature/hipl.001
     m_Weight: 0
   - m_Path: Armature/hipl.001/hipl.001_end
-    m_Weight: 1
+    m_Weight: 0
   - m_Path: Armature/hipr
     m_Weight: 0
   - m_Path: Armature/hipr/leg2r
-    m_Weight: 1
+    m_Weight: 0
   - m_Path: Armature/hipr/leg2r/leg1r
-    m_Weight: 1
+    m_Weight: 0
   - m_Path: Armature/hipr/leg2r/leg1r/leg1r_end
-    m_Weight: 1
+    m_Weight: 0
   - m_Path: Armature/hipr.001
     m_Weight: 0
   - m_Path: Armature/hipr.001/hipr.001_end
-    m_Weight: 1
+    m_Weight: 0
   - m_Path: Armature/leg2l.001
     m_Weight: 0
   - m_Path: Armature/leg2l.001/leg2l.001_end
-    m_Weight: 1
+    m_Weight: 0
   - m_Path: Armature/leg2r.001
     m_Weight: 0
   - m_Path: Armature/leg2r.001/leg2r.001_end
-    m_Weight: 1
+    m_Weight: 0
   - m_Path: Armature/spine3
     m_Weight: 1
   - m_Path: Armature/spine3/spine2
