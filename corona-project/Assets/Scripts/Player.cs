@@ -13,6 +13,7 @@ public class Player : MonoBehaviour
     public float itemReach = 2.0f;
     public bool isMasked = false;
 
+    private SprintBar _sprintBar;
     private Camera _camera;
     private ParticleSystem _particleSystem;
     private MultiAnimator _animator;
@@ -30,9 +31,11 @@ public class Player : MonoBehaviour
 
     private void Start()
     {
+        _sprintBar = FindObjectOfType<SprintBar>();
         _camera = Camera.main;
         _particleSystem = GetComponent<ParticleSystem>();
-        _animator = new MultiAnimator(modelMasked.GetComponentInChildren<Animator>(), modelUnmasked.GetComponentInChildren<Animator>());
+        _animator = new MultiAnimator(modelMasked.GetComponentInChildren<Animator>(),
+            modelUnmasked.GetComponentInChildren<Animator>());
         _boxCollider = GetComponent<BoxCollider>();
 
         _shoppingCart = GetComponentInChildren<ShoppingCart>();
@@ -46,17 +49,21 @@ public class Player : MonoBehaviour
     {
         float speed = baseSpeed;
 
-        if (Input.GetKey(KeyCode.LeftShift))
+        if (Input.GetKey(KeyCode.LeftShift) && _sprintBar.Percent > 0)
         {
             speed = sprintSpeed;
             if (!_particleSystem.isPlaying)
                 _particleSystem.Play();
             _animator.SetBool("Running", true);
+            _sprintBar.DecreaseBy(Time.deltaTime * 50);
         }
-        else if (_particleSystem.isPlaying)
+        else
         {
-            _particleSystem.Stop();
+            if(_particleSystem.isPlaying)
+                _particleSystem.Stop();
+            
             _animator.SetBool("Running", false);
+            _sprintBar.DecreaseBy(-Time.deltaTime * 30);
         }
 
         if (Input.GetKey(KeyCode.W))
@@ -124,12 +131,16 @@ public class Player : MonoBehaviour
 
         public void SetBool(string name, bool val)
         {
-            foreach (Animator animator in _animators) animator.SetBool(name, val);
+            foreach (Animator animator in _animators)
+                if (animator.gameObject.activeInHierarchy)
+                    animator.SetBool(name, val);
         }
-        
+
         public void SetTrigger(string name)
         {
-            foreach (Animator animator in _animators) animator.SetTrigger(name);
+            foreach (Animator animator in _animators)
+                if (animator.gameObject.activeInHierarchy)
+                    animator.SetTrigger(name);
         }
     }
 }

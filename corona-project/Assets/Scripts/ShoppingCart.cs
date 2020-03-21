@@ -67,6 +67,7 @@ public class ShoppingCart : MonoBehaviour
     {
         foreach (GameObject gameObject in _cartObjects)
         {
+            GameManager.Instance.score.AddItemScore(gameObject.GetComponent<ShoppingCartItem>().score);
             Destroy(gameObject);
         }
         _cartObjects.Clear();

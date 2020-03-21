@@ -8,6 +8,7 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     [HideInInspector] public Player player;
+    [HideInInspector] public Score score;
     
     private void Start()
     {
@@ -21,6 +22,7 @@ public class GameManager : MonoBehaviour
         }
 
         player = FindObjectOfType<Player>();
+        score = FindObjectOfType<Score>();
     }
 
     public void Restart()
