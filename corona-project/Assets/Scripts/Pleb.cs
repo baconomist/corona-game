@@ -12,14 +12,15 @@ public class Pleb : MonoBehaviour
     public Material baseMaterial;
     public Material infectedMaterial;
     public Transform infectionCylinder;
-    public Transform infectedPlebs;
-    public Transform basePlebs;
 
     public float speed = 3.0f;
     public float infectedSpeed = 5.0f;
     public float infectionRadius = 3.0f;
     public float infectionSpeed = 5.0f;
     public bool infected = false;
+    
+    private Transform _infectedPlebs;
+    private Transform _basePlebs;
 
     private RandomMovement _randomMovement;
     private Transform _currentFollowingTransform = null;
@@ -27,6 +28,9 @@ public class Pleb : MonoBehaviour
 
     private void OnValidate()
     {
+        _infectedPlebs = GameManager.Instance.infectedPlebs;
+        _basePlebs = GameManager.Instance.basePlebs;
+        
         if (infected)
             Infect();
         else
@@ -41,6 +45,9 @@ public class Pleb : MonoBehaviour
     {
         _randomMovement = new RandomMovement(3000 + 2000 * Random.value, speed, transform);
         _nav = GetComponent<NavMeshAgent>();
+
+        _infectedPlebs = GameManager.Instance.infectedPlebs;
+        _basePlebs = GameManager.Instance.basePlebs;
     }
 
     void Update()
@@ -63,10 +70,10 @@ public class Pleb : MonoBehaviour
 
     void FollowNearestEntity()
     {
-        if (basePlebs.childCount > 0)
+        if (_basePlebs.childCount > 0)
         {
-            Transform closest = basePlebs.GetChild(0);
-            foreach (Transform t in basePlebs.transform)
+            Transform closest = _basePlebs.GetChild(0);
+            foreach (Transform t in _basePlebs.transform)
             {
                 if (Vector3.Distance(transform.position, t.position) <
                     Vector3.Distance(transform.position, closest.position))
@@ -118,10 +125,11 @@ public class Pleb : MonoBehaviour
     void Infect()
     {
         GetComponent<MeshRenderer>().sharedMaterial = infectedMaterial;
-        transform.parent = infectedPlebs.transform;
+        transform.parent = _infectedPlebs.transform;
         speed = infectedSpeed;
         infected = true;
     }
+    
     public void OnInfectionCylinderCollided(Collider other)
     {
         if(other.gameObject.GetComponent<Player>() != null)
