@@ -125,6 +125,7 @@ public class Player : MonoBehaviour
             if (shoppingCartItem != null)
             {
                 _shoppingCart.TeleportIntoCart(collider.gameObject);
+                shoppingCartItem.interactionTimeStamp = Time.time;
                 shoppingCartItem.canAttachToCart = true;
             }
         }
@@ -152,7 +153,6 @@ public class Player : MonoBehaviour
         if (isMasked)
         {
             SetMasked(false);
-            
         }
         else if(!_isDead)
         {
@@ -160,14 +160,9 @@ public class Player : MonoBehaviour
         }
     }
 
-    public void EmptyCart()
-    {
-        _shoppingCart.EmptyItems();
-    }
-
     private void OnCollisionEnter(Collision other)
     {
-        if (other.gameObject.GetComponent<ShoppingCartItem>() != null)
+        if (other.gameObject.GetComponent<ShoppingCartItem>() != null || other.gameObject.GetComponent<Pleb>() != null)
             Physics.IgnoreCollision(other.collider, _boxCollider);
     }
 

@@ -18,7 +18,7 @@ public class Pleb : MonoBehaviour
     public float infectionRadius = 3.0f;
     public float infectionSpeed = 5.0f;
     public bool infected = false;
-    
+
     private Transform _infectedPlebs;
     private Transform _basePlebs;
 
@@ -29,9 +29,11 @@ public class Pleb : MonoBehaviour
     private void OnValidate()
     {
         if (infected)
-            GetComponent<MeshRenderer>().sharedMaterial = infectedMaterial;
+            GetComponentInChildren<SkinnedMeshRenderer>().sharedMaterials = new Material[]
+                {GetComponentInChildren<SkinnedMeshRenderer>().sharedMaterials[0], infectedMaterial};
         else
-            GetComponent<MeshRenderer>().sharedMaterial = baseMaterial;
+            GetComponentInChildren<SkinnedMeshRenderer>().sharedMaterials = new Material[]
+                {GetComponentInChildren<SkinnedMeshRenderer>().sharedMaterials[0], baseMaterial};
     }
 
     void Start()
@@ -41,8 +43,8 @@ public class Pleb : MonoBehaviour
 
         _infectedPlebs = GameManager.Instance.infectedPlebs;
         _basePlebs = GameManager.Instance.basePlebs;
-        
-        if(infected)
+
+        if (infected)
             Infect();
     }
 
@@ -104,7 +106,7 @@ public class Pleb : MonoBehaviour
             {
                 infectionCylinder.localScale = new Vector3(0.1f, 0.1f, 0.1f);
             }
-            
+
             _nav.speed = speed;
             _nav.SetDestination(_currentFollowingTransform.position);
         }
@@ -120,27 +122,29 @@ public class Pleb : MonoBehaviour
 
     void Infect()
     {
-        GetComponent<MeshRenderer>().sharedMaterial = infectedMaterial;
-        if(_infectedPlebs.transform != null)
+        GetComponentInChildren<SkinnedMeshRenderer>().sharedMaterials = new Material[]
+            {GetComponentInChildren<SkinnedMeshRenderer>().sharedMaterials[0], infectedMaterial};
+        if (_infectedPlebs.transform != null)
             transform.parent = _infectedPlebs.transform;
         speed = infectedSpeed;
         infected = true;
     }
-    
+
     public void OnInfectionCylinderCollided(Collider other)
     {
-        if(!infected)
+        if (!infected)
             return;
-        
+
         if (other.gameObject.GetComponent<Player>() != null)
         {
             GameManager.Instance.player.OnInfectionCylinderCollided();
-            
+
             // Reset cylinder size to give player a chance to live after they lose their mask
             foreach (Transform pleb in _infectedPlebs)
             {
                 pleb.GetComponent<Pleb>().infectionCylinder.localScale = new Vector3(0.1f, 0.1f, 0.1f);
             }
+
             infectionCylinder.localScale = new Vector3(0.1f, 0.1f, 0.1f);
         }
         else if (other.gameObject.GetComponent<Pleb>() != null)
@@ -177,12 +181,15 @@ public class Pleb : MonoBehaviour
             }
 
             _timer += Time.deltaTime;
+
+            Vector3 vec = _transform.position + moveBy;
+            _transform.LookAt(new Vector3(vec.x, _transform.position.y, vec.z));
         }
 
         private void CalculateMoveBy()
         {
             int direction = Random.value > 0.5f ? -1 : 1;
-            moveBy = Utils.Clamp(Utils.Lerp(new Vector3(Random.value, Random.value, Random.value), 1.0f, 2.0f), 1.0f,
+            moveBy = Utils.Clamp(Utils.Lerp(new Vector3(Random.value, 0, Random.value), 1.0f, 2.0f), 1.0f,
                          2.0f) *
                      Time.deltaTime *
                      _speed * direction;

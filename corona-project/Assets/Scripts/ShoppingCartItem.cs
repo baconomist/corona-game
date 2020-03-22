@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class ShoppingCartItem : MonoBehaviour
@@ -6,4 +7,11 @@ public class ShoppingCartItem : MonoBehaviour
     public bool canAttachToCart = false;
     public float interactionTimeStamp = 0;
     public bool attachedToCart = false;
+    public bool scored = false;
+
+    private void Update()
+    {
+        if (Time.time - interactionTimeStamp >= 2.0f)
+            canAttachToCart = false;
+    }
 }

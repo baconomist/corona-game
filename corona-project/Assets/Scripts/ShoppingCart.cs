@@ -35,8 +35,8 @@ public class ShoppingCart : MonoBehaviour
             
             FixedJoint joint = other.gameObject.GetComponent<FixedJoint>();
             joint.connectedBody = GetComponent<Rigidbody>();
-            
-            other.gameObject.GetComponent<Rigidbody>().detectCollisions = false;
+
+            other.gameObject.GetComponent<BoxCollider>().isTrigger = true;
             other.gameObject.GetComponent<ShoppingCartItem>().attachedToCart = true;
             
             _cartObjects.Add(other.gameObject);
@@ -61,15 +61,5 @@ public class ShoppingCart : MonoBehaviour
 //            return;
 //
 //        other.gameObject.GetComponent<ShoppingCartItem>().canAttachToCart = true;
-    }
-
-    public void EmptyItems()
-    {
-        foreach (GameObject gameObject in _cartObjects)
-        {
-            GameManager.Instance.score.AddItemScore(gameObject.GetComponent<ShoppingCartItem>().score);
-            Destroy(gameObject);
-        }
-        _cartObjects.Clear();
     }
 }

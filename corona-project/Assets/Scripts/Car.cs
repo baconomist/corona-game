@@ -7,10 +7,12 @@ public class Car : MonoBehaviour
 {
     private void OnTriggerEnter(Collider other)
     {
-        if (other.transform.IsChildOf(GameManager.Instance.player.transform))
+        if (other.GetComponent<ShoppingCartItem>() != null)
         {
-            Player player = GameManager.Instance.player.GetComponent<Player>();
-            player.EmptyCart();
+            if(!other.gameObject.GetComponent<ShoppingCartItem>().scored)
+                GameManager.Instance.score.AddItemScore(other.gameObject.GetComponent<ShoppingCartItem>().score);
+            other.gameObject.GetComponent<ShoppingCartItem>().scored = true;
+            Destroy(other.gameObject);
         }
     }
 }
