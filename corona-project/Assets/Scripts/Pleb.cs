@@ -28,17 +28,10 @@ public class Pleb : MonoBehaviour
 
     private void OnValidate()
     {
-        _infectedPlebs = GameManager.Instance.infectedPlebs;
-        _basePlebs = GameManager.Instance.basePlebs;
-        
         if (infected)
-            Infect();
+            GetComponent<MeshRenderer>().sharedMaterial = infectedMaterial;
         else
-        {
             GetComponent<MeshRenderer>().sharedMaterial = baseMaterial;
-        }
-
-        GetComponent<NavMeshAgent>().speed = speed;
     }
 
     void Start()
@@ -48,6 +41,9 @@ public class Pleb : MonoBehaviour
 
         _infectedPlebs = GameManager.Instance.infectedPlebs;
         _basePlebs = GameManager.Instance.basePlebs;
+        
+        if(infected)
+            Infect();
     }
 
     void Update()
@@ -108,7 +104,7 @@ public class Pleb : MonoBehaviour
             {
                 infectionCylinder.localScale = new Vector3(0.1f, 0.1f, 0.1f);
             }
-
+            
             _nav.speed = speed;
             _nav.SetDestination(_currentFollowingTransform.position);
         }
@@ -125,15 +121,28 @@ public class Pleb : MonoBehaviour
     void Infect()
     {
         GetComponent<MeshRenderer>().sharedMaterial = infectedMaterial;
-        transform.parent = _infectedPlebs.transform;
+        if(_infectedPlebs.transform != null)
+            transform.parent = _infectedPlebs.transform;
         speed = infectedSpeed;
         infected = true;
     }
     
     public void OnInfectionCylinderCollided(Collider other)
     {
-        if(other.gameObject.GetComponent<Player>() != null)
-            GameManager.Instance.Restart();
+        if(!infected)
+            return;
+        
+        if (other.gameObject.GetComponent<Player>() != null)
+        {
+            GameManager.Instance.player.OnInfectionCylinderCollided();
+            
+            // Reset cylinder size to give player a chance to live after they lose their mask
+            foreach (Transform pleb in _infectedPlebs)
+            {
+                pleb.GetComponent<Pleb>().infectionCylinder.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+            }
+            infectionCylinder.localScale = new Vector3(0.1f, 0.1f, 0.1f);
+        }
         else if (other.gameObject.GetComponent<Pleb>() != null)
             other.gameObject.GetComponent<Pleb>().Infect();
     }

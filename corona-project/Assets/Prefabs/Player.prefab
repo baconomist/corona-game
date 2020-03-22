@@ -54,6 +54,9 @@ MonoBehaviour:
   baseSpeed: 2
   sprintSpeed: 6
   itemReach: 2
+  staminaDepleteSpeed: 50
+  timeBeforeStaminaRegen: 1
+  staminaRegenSpeed: 100
   isMasked: 1
 --- !u!54 &1936670946
 Rigidbody:

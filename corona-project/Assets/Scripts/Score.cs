@@ -16,7 +16,8 @@ public class Score : MonoBehaviour
     private void Update()
     {
         _textMeshPro.SetText(_score.ToString());
-        _score = Mathf.RoundToInt(Time.time * 100) + _itemScore;
+        //_score = Mathf.RoundToInt(Time.time * 100) + _itemScore;
+        _score = _itemScore;
     }
 
     public void AddItemScore(int amount)
