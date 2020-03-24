@@ -1,12 +1,15 @@
 using System;
 using UnityEngine;
+using UnityEngine.UIElements;
 using Random = UnityEngine.Random;
 
 public class ItemSpawner : MonoBehaviour
 {
     public GameObject TP;
     public GameObject Mask;
-    public GameObject RegularPleb;
+    public GameObject BasePleb;
+
+    [Header("Spawning Area")] public GameObject spawningPlane;
 
     private float timer;
     private float timer2;
@@ -16,11 +19,14 @@ public class ItemSpawner : MonoBehaviour
     
     private void Start()
     {
-        size = GameManager.Instance.ground.GetComponent<MeshRenderer>().bounds.size;
+        size = spawningPlane.GetComponent<MeshRenderer>().bounds.size;
     }
 
     private void Update()
     {
+        if (!GameManager.Instance.running)
+            return;
+        
         if (timer >= 0.5f)
         {
             GameObject o = GameObject.Instantiate(TP);
@@ -37,8 +43,9 @@ public class ItemSpawner : MonoBehaviour
 
         if (timer3 >= 5f)
         {
-            GameObject o = GameObject.Instantiate(RegularPleb);
+            GameObject o = GameObject.Instantiate(BasePleb);
             o.transform.position = new Vector3(Random.value * size.x / 2 * (Random.value > 0.5 ? -1 : 1), 10, Random.value * size.z / 2 * (Random.value > 0.5 ? -1 : 1));
+            o.transform.parent = GameManager.Instance.basePlebs;
             timer3 = 0;
         }
 

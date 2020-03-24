@@ -23,5 +23,8 @@ public class Score : MonoBehaviour
     public void AddItemScore(int amount)
     {
         _itemScore += amount;
+        
+        if(_score > PlayerPrefs.GetInt("HighScore"))
+            PlayerPrefs.SetInt("HighScore", _score);
     }
 }

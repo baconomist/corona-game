@@ -59,7 +59,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 7a5193cfddec9d94680a68ececf14a4e, type: 2}
+  - {fileID: 2100000, guid: 6684c44f97672304693201c48ddf18b4, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -160,7 +160,7 @@ MonoBehaviour:
   speed: 4
   infectedSpeed: 4
   infectionRadius: 15
-  infectionSpeed: 2
+  infectionSpeed: 4
   infected: 0
 --- !u!54 &1617341030089881131
 Rigidbody:
@@ -304,8 +304,7 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Materials.Array.data[0]
       value: 
-      objectReference: {fileID: -2030901756695967124, guid: 54b95633eb3a8844e8c45a1a6345cbe8,
-        type: 3}
+      objectReference: {fileID: 0}
     - target: {fileID: 2489302850876048126, guid: 2f0095bb5737e664e908845dcc667d1a,
         type: 3}
       propertyPath: m_Materials.Array.data[1]

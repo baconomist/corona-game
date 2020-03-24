@@ -19,8 +19,10 @@ public class ShoppingCart : MonoBehaviour
     private void OnCollisionEnter(Collision other)
     {
         if (other.gameObject.GetComponent<ShoppingCartItem>() == null)
+        {
             foreach (BoxCollider boxCollider in _boxColliders)
                 Physics.IgnoreCollision(other.collider, boxCollider);
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -41,6 +43,11 @@ public class ShoppingCart : MonoBehaviour
             
             _cartObjects.Add(other.gameObject);
         }
+        else
+        {
+            GameManager.Instance.player.TakeNearestItems();
+        }
+
 //        else
 //        {
 //            TeleportIntoCart(other.gameObject);

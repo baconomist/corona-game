@@ -9,6 +9,7 @@ public class Player : MonoBehaviour
 {
     public GameObject modelMasked;
     public GameObject modelUnmasked;
+    public AudioClip dyingAudio;
 
     public float baseSpeed = 2.0f;
     public float sprintSpeed = 4.0f;
@@ -23,6 +24,9 @@ public class Player : MonoBehaviour
     private ParticleSystem _particleSystem;
     private MultiAnimator _animator;
     private BoxCollider _boxCollider;
+    private Rigidbody _rigidbody;
+    private AudioSource _footStepAudio;
+    private AudioSource _pickupAudio;
 
     private ShoppingCart _shoppingCart;
 
@@ -31,9 +35,10 @@ public class Player : MonoBehaviour
     private float _staminaLastUsedTimeStamp = 0;
 
     private FingersScript _fingersScript;
-    private TapGestureRecognizer _doubleTapGestureRecognizer;
+    private TapGestureRecognizer _tapRecognizer;
     private LongPressGestureRecognizer _longPressGestureRecognizer;
-    private SwipeGestureRecognizer _swipeGestureRecognizer;
+
+    private float _deathTimeStamp = -1;
 
     private void OnValidate()
     {
@@ -48,37 +53,56 @@ public class Player : MonoBehaviour
         _animator = new MultiAnimator(modelMasked.GetComponentInChildren<Animator>(),
             modelUnmasked.GetComponentInChildren<Animator>());
         _boxCollider = GetComponent<BoxCollider>();
+        _rigidbody = GetComponent<Rigidbody>();
+        _footStepAudio = GetComponents<AudioSource>()[0];
+        _pickupAudio = GetComponents<AudioSource>()[1];
 
         _shoppingCart = GetComponentInChildren<ShoppingCart>();
 
         _cameraOffset = _camera.transform.position - transform.position;
 
-
         _fingersScript = GetComponent<FingersScript>();
 
-        _doubleTapGestureRecognizer = new TapGestureRecognizer();
-        _doubleTapGestureRecognizer.NumberOfTapsRequired = 2;
-        _doubleTapGestureRecognizer.StateUpdated += Controls.OnDoubleTap;
+        _tapRecognizer = new TapGestureRecognizer();
+        _tapRecognizer.NumberOfTapsRequired = 1;
+        _tapRecognizer.StateUpdated += Controls.OnTap;
 
         _longPressGestureRecognizer = new LongPressGestureRecognizer();
-        _longPressGestureRecognizer.MinimumDurationSeconds = 0.3f;
+        _longPressGestureRecognizer.MinimumDurationSeconds = 0.1f;
         _longPressGestureRecognizer.StateUpdated += Controls.OnLongPress;
 
-        _swipeGestureRecognizer = new SwipeGestureRecognizer();
-        _swipeGestureRecognizer.Direction = SwipeGestureRecognizerDirection.Up;
-        _swipeGestureRecognizer.StateUpdated += Controls.OnSwipe;
-
-        _fingersScript.AddGesture(_doubleTapGestureRecognizer);
+        _fingersScript.AddGesture(_tapRecognizer);
         _fingersScript.AddGesture(_longPressGestureRecognizer);
-        _fingersScript.AddGesture(_swipeGestureRecognizer);
 
         _fingersScript.TreatMousePointerAsFinger = !Input.touchSupported;
     }
 
     private void Update()
     {
+        if (!GameManager.Instance.running || _isDead)
+        {
+            if (_isDead)
+            {
+                if (_deathTimeStamp <= -1)
+                    _deathTimeStamp = Time.time; 
+                    
+                if (_footStepAudio.clip != dyingAudio)
+                {
+                    _footStepAudio.clip = dyingAudio;
+                    _footStepAudio.loop = false;
+                    _footStepAudio.Play();
+                }
+                else if(!_footStepAudio.isPlaying && Time.time - _deathTimeStamp >= 6.0f)
+                {
+                    GameManager.Instance.Restart();
+                }
+            }
+
+            return;
+        }
+
         Controls.Update();
-        
+
         float speed = baseSpeed;
 
         if (Controls.Sprinting() && _sprintBar.Percent > 0)
@@ -90,6 +114,10 @@ public class Player : MonoBehaviour
             _sprintBar.DecreaseBy(Time.deltaTime * staminaDepleteSpeed);
 
             _staminaLastUsedTimeStamp = Time.time;
+            
+            if(!_footStepAudio.isPlaying)
+                _footStepAudio.Play();
+            _footStepAudio.pitch = 1.5f;
         }
         else
         {
@@ -100,14 +128,15 @@ public class Player : MonoBehaviour
 
             if (Time.time - _staminaLastUsedTimeStamp >= timeBeforeStaminaRegen)
                 _sprintBar.DecreaseBy(-Time.deltaTime * staminaRegenSpeed);
+            
+            _footStepAudio.Stop();
         }
+
+        _rigidbody.velocity = Vector3.zero;
 
         //if (Controls.Moving())
         // Always moving?
         transform.position += transform.forward * Time.deltaTime * speed;
-
-        if (Controls.TakingItem())
-            TakeNearestItem();
 
         transform.Rotate(0, Controls.GetTurnBy() * Time.deltaTime, 0);
     }
@@ -117,27 +146,36 @@ public class Player : MonoBehaviour
         _camera.transform.position = transform.position + _cameraOffset;
     }
 
-    private void TakeNearestItem()
+    public void TakeNearestItems()
     {
+        bool playAnim = false;
+
         foreach (Collider collider in Physics.OverlapSphere(transform.position, itemReach))
         {
             ShoppingCartItem shoppingCartItem = collider.gameObject.GetComponent<ShoppingCartItem>();
             if (shoppingCartItem != null)
             {
+                if (Vector3.Distance(transform.position, shoppingCartItem.transform.position) > 9.0f)
+                    playAnim = true;
+                
                 _shoppingCart.TeleportIntoCart(collider.gameObject);
                 shoppingCartItem.interactionTimeStamp = Time.time;
                 shoppingCartItem.canAttachToCart = true;
             }
         }
 
-        _animator.SetTrigger("TakeItem");
+        if (playAnim)
+        {
+            _animator.SetTrigger("TakeItem");
+            _pickupAudio.Play();
+        }
     }
 
     private void Die()
     {
         _animator.SetTrigger("Die");
         _isDead = true;
-        
+
         //GameManager.Instance.Restart();
     }
 
@@ -146,6 +184,8 @@ public class Player : MonoBehaviour
         modelMasked.SetActive(masked);
         modelUnmasked.SetActive(!masked);
         isMasked = masked;
+        
+        _pickupAudio.Play();
     }
 
     public void OnInfectionCylinderCollided()
@@ -154,7 +194,7 @@ public class Player : MonoBehaviour
         {
             SetMasked(false);
         }
-        else if(!_isDead)
+        else if (!_isDead)
         {
             Die();
         }
@@ -192,24 +232,17 @@ public class Player : MonoBehaviour
 
     private static class Controls
     {
-        public const bool DEBUG_KEYBOARD = true;
+        public const bool DEBUG_KEYBOARD = false;
         public const float MOBILE_SPRINT_TIME_SEC = 1.0f;
 
-        private static float _doubleTapTimeStamp = -99999;
+        private static float _sprintTimeStamp = -99999;
         private static float _rotationTimeStamp = -99999;
-        private static float _swipeTimeStamp = -99999;
         private static float _turnBy = 0;
-        private static bool _takingItem = false;
 
         public static bool Sprinting()
         {
-            bool mobile = Time.time - _doubleTapTimeStamp <= MOBILE_SPRINT_TIME_SEC;
+            bool mobile = Time.time - _sprintTimeStamp <= MOBILE_SPRINT_TIME_SEC;
             return (DEBUG_KEYBOARD && Input.GetKey(KeyCode.LeftShift)) || mobile;
-        }
-
-        public static bool TakingItem()
-        {
-            return _takingItem;
         }
 
         public static float GetTurnBy()
@@ -219,7 +252,9 @@ public class Player : MonoBehaviour
 
         public static void Update()
         {
-            _turnBy = 0;
+            if (Time.time - _rotationTimeStamp >= 0.1f)
+                _turnBy = 0;
+
             if (DEBUG_KEYBOARD)
             {
                 if (Input.GetKey(KeyCode.D))
@@ -227,28 +262,29 @@ public class Player : MonoBehaviour
                 if (Input.GetKey(KeyCode.A))
                     _turnBy = -100;
             }
-            
-            _takingItem = Input.GetKey(KeyCode.F) || (Time.time - _swipeTimeStamp <= 0.25f);
         }
 
         public static void OnLongPress(GestureRecognizer gesture)
         {
-            if (gesture.FocusX > Screen.width / 2)
-                _turnBy = 100;
-            else
-                _turnBy = -100;
+            if (gesture.State == GestureRecognizerState.Began || gesture.State == GestureRecognizerState.Executing)
+            {
+                if (gesture.FocusX >= Screen.width * 0.7f)
+                {
+                    _turnBy = 100;
+                    _rotationTimeStamp = Time.time;
+                }
+                else if (gesture.FocusX <= Screen.width * 0.3f)
+                {
+                    _turnBy = -100;
+                    _rotationTimeStamp = Time.time;
+                }
+            }
         }
 
-        public static void OnDoubleTap(GestureRecognizer gesture)
+        public static void OnTap(GestureRecognizer gesture)
         {
-            if (gesture.State == GestureRecognizerState.Ended)
-                _doubleTapTimeStamp = Time.time;
-        }
-
-        public static void OnSwipe(GestureRecognizer gesture)
-        {
-            if (gesture.State == GestureRecognizerState.Ended)
-                _swipeTimeStamp = Time.time;
+            if (gesture.FocusX > Screen.width * 0.3f && gesture.FocusX < Screen.width * 0.7f)
+                _sprintTimeStamp = Time.time;
         }
     }
 }
