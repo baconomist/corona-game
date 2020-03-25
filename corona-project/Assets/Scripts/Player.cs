@@ -7,11 +7,13 @@ using TouchPhase = UnityEngine.TouchPhase;
 
 public class Player : MonoBehaviour
 {
-    public GameObject modelMasked;
+    [Header("Assets")] public GameObject modelMasked;
     public GameObject modelUnmasked;
     public AudioClip dyingAudio;
+    public AudioClip pickupAudio;
+    public AudioClip footStepAudio;
 
-    public float baseSpeed = 2.0f;
+    [Header("Attributes")] public float baseSpeed = 2.0f;
     public float sprintSpeed = 4.0f;
     public float itemReach = 2.0f;
     public float staminaDepleteSpeed = 50.0f;
@@ -25,8 +27,8 @@ public class Player : MonoBehaviour
     private MultiAnimator _animator;
     private BoxCollider _boxCollider;
     private Rigidbody _rigidbody;
-    private AudioSource _footStepAudio;
-    private AudioSource _pickupAudio;
+    private AudioSource _audioSource1;
+    private AudioSource _audioSource2;
 
     private ShoppingCart _shoppingCart;
 
@@ -45,6 +47,15 @@ public class Player : MonoBehaviour
         SetMasked(isMasked);
     }
 
+    private void Awake()
+    {
+        _audioSource1 = gameObject.AddComponent<AudioSource>();
+        _audioSource1.clip = footStepAudio;
+        
+        _audioSource2 = gameObject.AddComponent<AudioSource>();
+        _audioSource2.clip = pickupAudio;
+    }
+
     private void Start()
     {
         _sprintBar = FindObjectOfType<SprintBar>();
@@ -54,8 +65,6 @@ public class Player : MonoBehaviour
             modelUnmasked.GetComponentInChildren<Animator>());
         _boxCollider = GetComponent<BoxCollider>();
         _rigidbody = GetComponent<Rigidbody>();
-        _footStepAudio = GetComponents<AudioSource>()[0];
-        _pickupAudio = GetComponents<AudioSource>()[1];
 
         _shoppingCart = GetComponentInChildren<ShoppingCart>();
 
@@ -84,15 +93,15 @@ public class Player : MonoBehaviour
             if (_isDead)
             {
                 if (_deathTimeStamp <= -1)
-                    _deathTimeStamp = Time.time; 
-                    
-                if (_footStepAudio.clip != dyingAudio)
+                    _deathTimeStamp = Time.time;
+
+                if (_audioSource1.clip != dyingAudio)
                 {
-                    _footStepAudio.clip = dyingAudio;
-                    _footStepAudio.loop = false;
-                    _footStepAudio.Play();
+                    _audioSource1.clip = dyingAudio;
+                    _audioSource1.loop = false;
+                    _audioSource1.Play();
                 }
-                else if(!_footStepAudio.isPlaying && Time.time - _deathTimeStamp >= 6.0f)
+                else if (!_audioSource1.isPlaying && Time.time - _deathTimeStamp >= 6.0f)
                 {
                     GameManager.Instance.Restart();
                 }
@@ -114,10 +123,10 @@ public class Player : MonoBehaviour
             _sprintBar.DecreaseBy(Time.deltaTime * staminaDepleteSpeed);
 
             _staminaLastUsedTimeStamp = Time.time;
-            
-            if(!_footStepAudio.isPlaying)
-                _footStepAudio.Play();
-            _footStepAudio.pitch = 1.5f;
+
+            if (!_audioSource1.isPlaying)
+                _audioSource1.Play();
+            _audioSource1.pitch = 1.5f;
         }
         else
         {
@@ -128,8 +137,8 @@ public class Player : MonoBehaviour
 
             if (Time.time - _staminaLastUsedTimeStamp >= timeBeforeStaminaRegen)
                 _sprintBar.DecreaseBy(-Time.deltaTime * staminaRegenSpeed);
-            
-            _footStepAudio.Stop();
+
+            _audioSource1.Stop();
         }
 
         _rigidbody.velocity = Vector3.zero;
@@ -157,7 +166,7 @@ public class Player : MonoBehaviour
             {
                 if (Vector3.Distance(transform.position, shoppingCartItem.transform.position) > 9.0f)
                     playAnim = true;
-                
+
                 _shoppingCart.TeleportIntoCart(collider.gameObject);
                 shoppingCartItem.interactionTimeStamp = Time.time;
                 shoppingCartItem.canAttachToCart = true;
@@ -167,7 +176,7 @@ public class Player : MonoBehaviour
         if (playAnim)
         {
             _animator.SetTrigger("TakeItem");
-            _pickupAudio.Play();
+            _audioSource2.Play();
         }
     }
 
@@ -184,8 +193,9 @@ public class Player : MonoBehaviour
         modelMasked.SetActive(masked);
         modelUnmasked.SetActive(!masked);
         isMasked = masked;
-        
-        _pickupAudio.Play();
+
+        if(_audioSource2 != null)
+            _audioSource2.Play();
     }
 
     public void OnInfectionCylinderCollided()

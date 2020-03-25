@@ -20,11 +20,12 @@ public class Pleb : MonoBehaviour
     public bool infected = false;
     
     [Header("Random Do Not Touch!")]
-    public bool follower = Random.value > 0.8f;
+    public bool isFollower;
 
     private Transform _infectedPlebs;
     private Transform _basePlebs;
 
+    private Animator _animator;
     private RandomMovement _randomMovement;
     private NavMeshAgent _nav;
 
@@ -42,15 +43,16 @@ public class Pleb : MonoBehaviour
 
     void Start()
     {
+        isFollower = Random.value > 0.9f;
+        
         _randomMovement = new RandomMovement(3000 + 2000 * Random.value, speed, transform);
         _nav = GetComponent<NavMeshAgent>();
 
         _infectedPlebs = GameManager.Instance.infectedPlebs;
         _basePlebs = GameManager.Instance.basePlebs;
 
+        _animator = GetComponentInChildren<Animator>();
         _cylinderStartScale = infectionCylinder.localScale;
-
-        follower = Random.value > 0.8f;
 
         if (infected)
             Infect();
@@ -61,42 +63,42 @@ public class Pleb : MonoBehaviour
         if (!GameManager.Instance.running)
             return;
 
-        if (!infected)
-             RandomMotion();
-        else if(follower)
-             FollowPlayerEntity();
-        else
+        if (isFollower)
         {
+            FollowPlayerEntity();
+            _animator.SetBool("IsAngry", true);
+        }
+        else
             // Disable AI for "non- _followers", its probably hard enough as is
             RandomMotion();
-
-            if (infected)
+        
+        if (infected)
+        {
+            bool nearSomething = false;
+            foreach (Transform t in _basePlebs.transform)
             {
-                bool nearSomething = false;
-                foreach (Transform t in _basePlebs.transform)
-                {
-                    if (Vector3.Distance(transform.position, t.position) <= infectionRadius)
-                    {
-                        infectionCylinder.localScale +=
-                            new Vector3(Time.deltaTime * infectionSpeed, 0, Time.deltaTime * infectionSpeed);
-                        nearSomething = true;
-                    }
-                }
-
-                if (Vector3.Distance(transform.position, GameManager.Instance.player.transform.position) <=
-                    infectionRadius)
+                if (Vector3.Distance(transform.position, t.position) <= infectionRadius)
                 {
                     infectionCylinder.localScale +=
                         new Vector3(Time.deltaTime * infectionSpeed, 0, Time.deltaTime * infectionSpeed);
                     nearSomething = true;
                 }
+            }
 
-                if (!nearSomething)
-                {
-                    infectionCylinder.localScale = _cylinderStartScale;
-                }
+            if (Vector3.Distance(transform.position, GameManager.Instance.player.transform.position) <=
+                infectionRadius)
+            {
+                infectionCylinder.localScale +=
+                    new Vector3(Time.deltaTime * infectionSpeed, 0, Time.deltaTime * infectionSpeed);
+                nearSomething = true;
+            }
+
+            if (!nearSomething)
+            {
+                infectionCylinder.localScale = _cylinderStartScale;
             }
         }
+        
     }
 
     void RandomMotion()
@@ -112,17 +114,6 @@ public class Pleb : MonoBehaviour
     void FollowPlayerEntity()
     {
         //FollowTransform(_currentFollowingTransform);
-        
-        if (Vector3.Distance(transform.position, GameManager.Instance.player.transform.position) <= infectionRadius)
-        {
-            infectionCylinder.localScale +=
-                new Vector3(Time.deltaTime * infectionSpeed, 0, Time.deltaTime * infectionSpeed);
-        }
-        else
-        {
-            infectionCylinder.localScale = _cylinderStartScale;
-        }
-
         _nav.speed = speed;
         _nav.SetDestination(GameManager.Instance.player.transform.position);
         
@@ -150,7 +141,7 @@ public class Pleb : MonoBehaviour
     {
         if (!infected)
             return;
-
+        
         if (other.gameObject.GetComponent<Player>() != null)
         {
             GameManager.Instance.player.OnInfectionCylinderCollided();
@@ -204,11 +195,12 @@ public class Pleb : MonoBehaviour
 
         private void CalculateMoveBy()
         {
-            int direction = Random.value > 0.5f ? -1 : 1;
-            moveBy = Utils.Clamp(Utils.Lerp(new Vector3(Random.value, 0, Random.value), 1.0f, 2.0f), 1.0f,
-                         2.0f) *
-                     Time.deltaTime *
-                     _speed * direction;
+            int directionX = Random.value > 0.5f ? -1 : 1;
+            int directionZ = Random.value > 0.5f ? -1 : 1;
+            moveBy = Time.deltaTime * _speed * Utils.Clamp(Utils.Lerp(new Vector3(Random.value, 0, Random.value), 1.0f, 2.0f), 1.0f,
+                         2.0f);
+            
+            moveBy = new Vector3(moveBy.x * directionX, 0, moveBy.z * directionZ);
         }
     }
 }
