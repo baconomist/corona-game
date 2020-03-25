@@ -65,6 +65,7 @@ public class Pleb : MonoBehaviour
 
         if (isFollower)
         {
+            speed = infectedSpeed;
             FollowPlayerEntity();
             _animator.SetBool("IsAngry", true);
         }

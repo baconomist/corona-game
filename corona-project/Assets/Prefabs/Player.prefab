@@ -58,6 +58,7 @@ MonoBehaviour:
   dyingAudio: {fileID: 8300000, guid: e69445747ea9a1248ac18ac67fd24209, type: 3}
   pickupAudio: {fileID: 8300000, guid: e242710f93c0cea44b9dffd1bb5d8c9d, type: 3}
   footStepAudio: {fileID: 8300000, guid: 0844d6b9a9d35214291758996e952cde, type: 3}
+  sprintBar: {fileID: 0}
   baseSpeed: 4
   sprintSpeed: 8
   itemReach: 10

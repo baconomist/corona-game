@@ -28,6 +28,8 @@ public class GameManager : MonoBehaviour
     public GameObject ground;
     public Transform infectedPlebs;
     public Transform basePlebs;
+    public GameObject gameUI;
+    public GameObject deathUI;
 
     public AudioClip costCovidAudio;
     public AudioClip costCovidAudioIntro;

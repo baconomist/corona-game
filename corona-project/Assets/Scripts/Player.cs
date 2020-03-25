@@ -12,6 +12,7 @@ public class Player : MonoBehaviour
     public AudioClip dyingAudio;
     public AudioClip pickupAudio;
     public AudioClip footStepAudio;
+    public SprintBar sprintBar;
 
     [Header("Attributes")] public float baseSpeed = 2.0f;
     public float sprintSpeed = 4.0f;
@@ -20,8 +21,7 @@ public class Player : MonoBehaviour
     public float timeBeforeStaminaRegen = 1.0f;
     public float staminaRegenSpeed = 100.0f;
     public bool isMasked = false;
-
-    private SprintBar _sprintBar;
+    
     private Camera _camera;
     private ParticleSystem _particleSystem;
     private MultiAnimator _animator;
@@ -40,8 +40,6 @@ public class Player : MonoBehaviour
     private TapGestureRecognizer _tapRecognizer;
     private LongPressGestureRecognizer _longPressGestureRecognizer;
 
-    private float _deathTimeStamp = -1;
-
     private void OnValidate()
     {
         SetMasked(isMasked);
@@ -58,7 +56,6 @@ public class Player : MonoBehaviour
 
     private void Start()
     {
-        _sprintBar = FindObjectOfType<SprintBar>();
         _camera = Camera.main;
         _particleSystem = GetComponent<ParticleSystem>();
         _animator = new MultiAnimator(modelMasked.GetComponentInChildren<Animator>(),
@@ -92,18 +89,11 @@ public class Player : MonoBehaviour
         {
             if (_isDead)
             {
-                if (_deathTimeStamp <= -1)
-                    _deathTimeStamp = Time.time;
-
                 if (_audioSource1.clip != dyingAudio)
                 {
                     _audioSource1.clip = dyingAudio;
                     _audioSource1.loop = false;
                     _audioSource1.Play();
-                }
-                else if (!_audioSource1.isPlaying && Time.time - _deathTimeStamp >= 6.0f)
-                {
-                    GameManager.Instance.Restart();
                 }
             }
 
@@ -114,13 +104,13 @@ public class Player : MonoBehaviour
 
         float speed = baseSpeed;
 
-        if (Controls.Sprinting() && _sprintBar.Percent > 0)
+        if (Controls.Sprinting() && sprintBar.Percent > 0)
         {
             speed = sprintSpeed;
             if (!_particleSystem.isPlaying)
                 _particleSystem.Play();
             _animator.SetBool("Running", true);
-            _sprintBar.DecreaseBy(Time.deltaTime * staminaDepleteSpeed);
+            sprintBar.DecreaseBy(Time.deltaTime * staminaDepleteSpeed);
 
             _staminaLastUsedTimeStamp = Time.time;
 
@@ -136,7 +126,7 @@ public class Player : MonoBehaviour
             _animator.SetBool("Running", false);
 
             if (Time.time - _staminaLastUsedTimeStamp >= timeBeforeStaminaRegen)
-                _sprintBar.DecreaseBy(-Time.deltaTime * staminaRegenSpeed);
+                sprintBar.DecreaseBy(-Time.deltaTime * staminaRegenSpeed);
 
             _audioSource1.Stop();
         }
@@ -184,6 +174,8 @@ public class Player : MonoBehaviour
     {
         _animator.SetTrigger("Die");
         _isDead = true;
+        GameManager.Instance.gameUI.SetActive(false);
+        GameManager.Instance.deathUI.SetActive(true);
 
         //GameManager.Instance.Restart();
     }
@@ -214,6 +206,22 @@ public class Player : MonoBehaviour
     {
         if (other.gameObject.GetComponent<ShoppingCartItem>() != null || other.gameObject.GetComponent<Pleb>() != null)
             Physics.IgnoreCollision(other.collider, _boxCollider);
+    }
+
+    public void Reset()
+    {
+        Awake();
+        GameManager.Instance.gameUI.SetActive(true);
+        GameManager.Instance.deathUI.SetActive(false);
+        _animator.SetTrigger("Reset");
+        _isDead = false;
+
+        // Give the player a chance by removing nearby plebs
+        foreach (Collider collider in Physics.OverlapSphere(transform.position, 15f))
+        {
+            if(collider.gameObject.GetComponent<Pleb>() != null)
+                Destroy(collider.gameObject);
+        }
     }
 
     private class MultiAnimator

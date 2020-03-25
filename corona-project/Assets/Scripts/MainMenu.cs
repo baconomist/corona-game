@@ -20,8 +20,6 @@ public class MainMenu : MonoBehaviour
 
     private void Update()
     {
-        gameUI.SetActive(false);
-        
         if (!GameManager.Instance.running && (Input.touchCount > 0 || Input.GetMouseButton(0)))
         {
             Time.timeScale = 1;
