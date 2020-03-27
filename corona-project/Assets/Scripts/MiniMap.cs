@@ -8,12 +8,14 @@ public class MiniMap : MonoBehaviour
     private RawImage _rawImage;
     private Texture2D _texture;
     private Vector3 _mapSize;
+    private Car _car;
 
     void Start()
     {
         _rawImage = GetComponent<RawImage>();
         _texture = new Texture2D(100, 100);
         _mapSize = GameManager.Instance.ground.GetComponent<MeshRenderer>().bounds.size;
+        _car = FindObjectOfType<Car>();
     }
     
     void Update()
@@ -23,15 +25,21 @@ public class MiniMap : MonoBehaviour
         {
             for (int x = 0; x < 100; x++)
             {
-                _texture.SetPixel(x, y, Color.white);
+                _texture.SetPixel(x, y, Color.gray);
             }
         }
 
         // Draw plebs on the map
         foreach (Transform infectedPleb in GameManager.Instance.infectedPlebs)
         {
-            Vector2 pos = WorldToMiniMap(infectedPleb.position);
-            _texture.SetPixel((int) pos.x, (int) pos.y, Color.red);
+            for (int y = 0; y < 2; y++)
+            {
+                for (int x = 0; x < 2; x++)
+                {
+                    Vector2 pos = WorldToMiniMap(infectedPleb.position);
+                    _texture.SetPixel((int) pos.x + x, (int) pos.y + y, Color.red);
+                }
+            }
         }
 
         // Give the player a square 4x4 on the minimap
@@ -41,6 +49,16 @@ public class MiniMap : MonoBehaviour
             {
                 Vector2 pos = WorldToMiniMap(GameManager.Instance.player.transform.position);
                 _texture.SetPixel((int) pos.x + x, (int) pos.y + y, Color.cyan);
+            }
+        }
+        
+        // Give the car a square 4x4 on the minimap
+        for (int y = 0; y < 5; y++)
+        {
+            for (int x = 0; x < 5; x++)
+            {
+                Vector2 pos = WorldToMiniMap(_car.transform.position);
+                _texture.SetPixel((int) pos.x + x, (int) pos.y + y, Color.green);
             }
         }
 

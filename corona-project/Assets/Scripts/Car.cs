@@ -5,12 +5,22 @@ using UnityEngine;
 
 public class Car : MonoBehaviour
 {
+    private AudioSource _audioSource;
+    
+    private void Start()
+    {
+        _audioSource = GetComponent<AudioSource>();
+    }
+
     private void OnTriggerEnter(Collider other)
     {
-        if (other.transform.IsChildOf(GameManager.Instance.player.transform))
+        if (other.GetComponent<ShoppingCartItem>() != null)
         {
-            Player player = GameManager.Instance.player.GetComponent<Player>();
-            player.EmptyCart();
+            if(!other.gameObject.GetComponent<ShoppingCartItem>().scored)
+                GameManager.Instance.score.AddItemScore(other.gameObject.GetComponent<ShoppingCartItem>().score);
+            other.gameObject.GetComponent<ShoppingCartItem>().scored = true;
+            _audioSource.Play();
+            Destroy(other.gameObject);
         }
     }
 }

@@ -1,79 +1,143 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using DigitalRubyShared;
 using UnityEngine;
+using TouchPhase = UnityEngine.TouchPhase;
 
 public class Player : MonoBehaviour
 {
-    public GameObject modelMasked;
+    [Header("Assets")] public GameObject modelMasked;
     public GameObject modelUnmasked;
+    public AudioClip dyingAudio;
+    public AudioClip pickupAudio;
+    public AudioClip footStepAudio;
+    public SprintBar sprintBar;
 
-    public float baseSpeed = 2.0f;
+    [Header("Attributes")] public float baseSpeed = 2.0f;
     public float sprintSpeed = 4.0f;
     public float itemReach = 2.0f;
+    public float staminaDepleteSpeed = 50.0f;
+    public float timeBeforeStaminaRegen = 1.0f;
+    public float staminaRegenSpeed = 100.0f;
     public bool isMasked = false;
-
-    private SprintBar _sprintBar;
+    
     private Camera _camera;
     private ParticleSystem _particleSystem;
     private MultiAnimator _animator;
     private BoxCollider _boxCollider;
+    private Rigidbody _rigidbody;
+    private AudioSource _audioSource1;
+    private AudioSource _audioSource2;
 
     private ShoppingCart _shoppingCart;
 
-    private bool _dead = false;
+    private bool _isDead = false;
     private Vector3 _cameraOffset;
+    private float _staminaLastUsedTimeStamp = 0;
+
+    private FingersScript _fingersScript;
+    private TapGestureRecognizer _tapRecognizer;
+    private LongPressGestureRecognizer _longPressGestureRecognizer;
 
     private void OnValidate()
     {
         SetMasked(isMasked);
     }
 
+    private void Awake()
+    {
+        _audioSource1 = gameObject.AddComponent<AudioSource>();
+        _audioSource1.clip = footStepAudio;
+        
+        _audioSource2 = gameObject.AddComponent<AudioSource>();
+        _audioSource2.clip = pickupAudio;
+    }
+
     private void Start()
     {
-        _sprintBar = FindObjectOfType<SprintBar>();
         _camera = Camera.main;
         _particleSystem = GetComponent<ParticleSystem>();
         _animator = new MultiAnimator(modelMasked.GetComponentInChildren<Animator>(),
             modelUnmasked.GetComponentInChildren<Animator>());
         _boxCollider = GetComponent<BoxCollider>();
+        _rigidbody = GetComponent<Rigidbody>();
 
         _shoppingCart = GetComponentInChildren<ShoppingCart>();
 
         _cameraOffset = _camera.transform.position - transform.position;
 
-        Cursor.lockState = CursorLockMode.Locked;
+        _fingersScript = GetComponent<FingersScript>();
+
+        _tapRecognizer = new TapGestureRecognizer();
+        _tapRecognizer.NumberOfTapsRequired = 1;
+        _tapRecognizer.StateUpdated += Controls.OnTap;
+
+        _longPressGestureRecognizer = new LongPressGestureRecognizer();
+        _longPressGestureRecognizer.MinimumDurationSeconds = 0.1f;
+        _longPressGestureRecognizer.StateUpdated += Controls.OnLongPress;
+
+        _fingersScript.AddGesture(_tapRecognizer);
+        _fingersScript.AddGesture(_longPressGestureRecognizer);
+
+        _fingersScript.TreatMousePointerAsFinger = !Input.touchSupported;
     }
 
     private void Update()
     {
+        if (!GameManager.Instance.running || _isDead)
+        {
+            if (_isDead)
+            {
+                if (_audioSource1.clip != dyingAudio)
+                {
+                    _audioSource1.clip = dyingAudio;
+                    _audioSource1.loop = false;
+                    _audioSource1.Play();
+                }
+            }
+
+            return;
+        }
+
+        Controls.Update();
+
         float speed = baseSpeed;
 
-        if (Input.GetKey(KeyCode.LeftShift) && _sprintBar.Percent > 0)
+        if (Controls.Sprinting() && sprintBar.Percent > 0)
         {
             speed = sprintSpeed;
             if (!_particleSystem.isPlaying)
                 _particleSystem.Play();
             _animator.SetBool("Running", true);
-            _sprintBar.DecreaseBy(Time.deltaTime * 50);
+            sprintBar.DecreaseBy(Time.deltaTime * staminaDepleteSpeed);
+
+            _staminaLastUsedTimeStamp = Time.time;
+
+            if (!_audioSource1.isPlaying)
+                _audioSource1.Play();
+            _audioSource1.pitch = 1.5f;
         }
         else
         {
-            if(_particleSystem.isPlaying)
+            if (_particleSystem.isPlaying)
                 _particleSystem.Stop();
-            
+
             _animator.SetBool("Running", false);
-            _sprintBar.DecreaseBy(-Time.deltaTime * 30);
+
+            if (Time.time - _staminaLastUsedTimeStamp >= timeBeforeStaminaRegen)
+                sprintBar.DecreaseBy(-Time.deltaTime * staminaRegenSpeed);
+
+            _audioSource1.Stop();
         }
 
-        if (Input.GetKey(KeyCode.W))
-            transform.position += transform.forward * Time.deltaTime * speed;
+        _rigidbody.velocity = Vector3.zero;
 
-        if (Input.GetKey(KeyCode.F))
-            TakeNearestItem();
+        //if (Controls.Moving())
+        // Always moving?
+        transform.position += transform.forward * Time.deltaTime * speed;
 
-
-        transform.Rotate(0, Input.GetAxis("Mouse X"), 0);
+        transform.Rotate(0, Controls.GetTurnBy() * Time.deltaTime, 0);
     }
 
     private void FixedUpdate()
@@ -81,43 +145,83 @@ public class Player : MonoBehaviour
         _camera.transform.position = transform.position + _cameraOffset;
     }
 
-    private void TakeNearestItem()
+    public void TakeNearestItems()
     {
+        bool playAnim = false;
+
         foreach (Collider collider in Physics.OverlapSphere(transform.position, itemReach))
         {
             ShoppingCartItem shoppingCartItem = collider.gameObject.GetComponent<ShoppingCartItem>();
             if (shoppingCartItem != null)
             {
+                if (Vector3.Distance(transform.position, shoppingCartItem.transform.position) > 9.0f)
+                    playAnim = true;
+
                 _shoppingCart.TeleportIntoCart(collider.gameObject);
+                shoppingCartItem.interactionTimeStamp = Time.time;
                 shoppingCartItem.canAttachToCart = true;
             }
         }
 
-        _animator.SetTrigger("TakeItem");
+        if (playAnim)
+        {
+            _animator.SetTrigger("TakeItem");
+            _audioSource2.Play();
+        }
     }
 
     private void Die()
     {
         _animator.SetTrigger("Die");
-        _dead = true;
+        _isDead = true;
+        GameManager.Instance.gameUI.SetActive(false);
+        GameManager.Instance.deathUI.SetActive(true);
+
+        //GameManager.Instance.Restart();
     }
 
-    private void SetMasked(bool masked)
+    public void SetMasked(bool masked)
     {
         modelMasked.SetActive(masked);
         modelUnmasked.SetActive(!masked);
         isMasked = masked;
+
+        if(_audioSource2 != null)
+            _audioSource2.Play();
     }
 
-    public void EmptyCart()
+    public void OnInfectionCylinderCollided()
     {
-        _shoppingCart.EmptyItems();
+        if (isMasked)
+        {
+            SetMasked(false);
+        }
+        else if (!_isDead)
+        {
+            Die();
+        }
     }
 
     private void OnCollisionEnter(Collision other)
     {
-        if (other.gameObject.GetComponent<ShoppingCartItem>() != null)
+        if (other.gameObject.GetComponent<ShoppingCartItem>() != null || other.gameObject.GetComponent<Pleb>() != null)
             Physics.IgnoreCollision(other.collider, _boxCollider);
+    }
+
+    public void Reset()
+    {
+        Awake();
+        GameManager.Instance.gameUI.SetActive(true);
+        GameManager.Instance.deathUI.SetActive(false);
+        _animator.SetTrigger("Reset");
+        _isDead = false;
+
+        // Give the player a chance by removing nearby plebs
+        foreach (Collider collider in Physics.OverlapSphere(transform.position, 15f))
+        {
+            if(collider.gameObject.GetComponent<Pleb>() != null)
+                Destroy(collider.gameObject);
+        }
     }
 
     private class MultiAnimator
@@ -141,6 +245,64 @@ public class Player : MonoBehaviour
             foreach (Animator animator in _animators)
                 if (animator.gameObject.activeInHierarchy)
                     animator.SetTrigger(name);
+        }
+    }
+
+    private static class Controls
+    {
+        public const bool DEBUG_KEYBOARD = false;
+        public const float MOBILE_SPRINT_TIME_SEC = 1.0f;
+
+        private static float _sprintTimeStamp = -99999;
+        private static float _rotationTimeStamp = -99999;
+        private static float _turnBy = 0;
+
+        public static bool Sprinting()
+        {
+            bool mobile = Time.time - _sprintTimeStamp <= MOBILE_SPRINT_TIME_SEC;
+            return (DEBUG_KEYBOARD && Input.GetKey(KeyCode.LeftShift)) || mobile;
+        }
+
+        public static float GetTurnBy()
+        {
+            return _turnBy;
+        }
+
+        public static void Update()
+        {
+            if (Time.time - _rotationTimeStamp >= 0.1f)
+                _turnBy = 0;
+
+            if (DEBUG_KEYBOARD)
+            {
+                if (Input.GetKey(KeyCode.D))
+                    _turnBy = 100;
+                if (Input.GetKey(KeyCode.A))
+                    _turnBy = -100;
+            }
+        }
+
+        public static void OnLongPress(GestureRecognizer gesture)
+        {
+            if (gesture.State == GestureRecognizerState.Began || gesture.State == GestureRecognizerState.Executing)
+            {
+                if (gesture.FocusX >= Screen.width * 0.7f)
+                {
+                    _turnBy = 100;
+                    _rotationTimeStamp = Time.time;
+                }
+                else if (gesture.FocusX <= Screen.width * 0.3f)
+                {
+                    _turnBy = -100;
+                    _rotationTimeStamp = Time.time;
+                }
+            }
+        }
+
+        public static void OnTap(GestureRecognizer gesture)
+        {
+            if (gesture.FocusX > Screen.width * 0.3f && gesture.FocusX < Screen.width * 0.7f)
+                _sprintTimeStamp = Time.time;
         }
     }
 }

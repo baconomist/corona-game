@@ -19,43 +19,87 @@ public class Pleb : MonoBehaviour
     public float infectionSpeed = 5.0f;
     public bool infected = false;
     
+    [Header("Random Do Not Touch!")]
+    public bool isFollower;
+
     private Transform _infectedPlebs;
     private Transform _basePlebs;
 
+    private Animator _animator;
     private RandomMovement _randomMovement;
-    private Transform _currentFollowingTransform = null;
     private NavMeshAgent _nav;
+
+    private Vector3 _cylinderStartScale;
 
     private void OnValidate()
     {
-        _infectedPlebs = GameManager.Instance.infectedPlebs;
-        _basePlebs = GameManager.Instance.basePlebs;
-        
         if (infected)
-            Infect();
+            GetComponentInChildren<SkinnedMeshRenderer>().sharedMaterials = new Material[]
+                {GetComponentInChildren<SkinnedMeshRenderer>().sharedMaterials[0], infectedMaterial};
         else
-        {
-            GetComponent<MeshRenderer>().sharedMaterial = baseMaterial;
-        }
-
-        GetComponent<NavMeshAgent>().speed = speed;
+            GetComponentInChildren<SkinnedMeshRenderer>().sharedMaterials = new Material[]
+                {GetComponentInChildren<SkinnedMeshRenderer>().sharedMaterials[0], baseMaterial};
     }
 
     void Start()
     {
+        isFollower = Random.value > 0.9f;
+        
         _randomMovement = new RandomMovement(3000 + 2000 * Random.value, speed, transform);
         _nav = GetComponent<NavMeshAgent>();
 
         _infectedPlebs = GameManager.Instance.infectedPlebs;
         _basePlebs = GameManager.Instance.basePlebs;
+
+        _animator = GetComponentInChildren<Animator>();
+        _cylinderStartScale = infectionCylinder.localScale;
+
+        if (infected)
+            Infect();
     }
 
     void Update()
     {
-        if (!infected)
-            RandomMotion();
+        if (!GameManager.Instance.running)
+            return;
+
+        if (isFollower)
+        {
+            speed = infectedSpeed;
+            FollowPlayerEntity();
+            _animator.SetBool("IsAngry", true);
+        }
         else
-            FollowNearestEntity();
+            // Disable AI for "non- _followers", its probably hard enough as is
+            RandomMotion();
+        
+        if (infected)
+        {
+            bool nearSomething = false;
+            foreach (Transform t in _basePlebs.transform)
+            {
+                if (Vector3.Distance(transform.position, t.position) <= infectionRadius)
+                {
+                    infectionCylinder.localScale +=
+                        new Vector3(Time.deltaTime * infectionSpeed, 0, Time.deltaTime * infectionSpeed);
+                    nearSomething = true;
+                }
+            }
+
+            if (Vector3.Distance(transform.position, GameManager.Instance.player.transform.position) <=
+                infectionRadius)
+            {
+                infectionCylinder.localScale +=
+                    new Vector3(Time.deltaTime * infectionSpeed, 0, Time.deltaTime * infectionSpeed);
+                nearSomething = true;
+            }
+
+            if (!nearSomething)
+            {
+                infectionCylinder.localScale = _cylinderStartScale;
+            }
+        }
+        
     }
 
     void RandomMotion()
@@ -68,50 +112,12 @@ public class Pleb : MonoBehaviour
         FollowTransform(GameManager.Instance.player.transform);
     }
 
-    void FollowNearestEntity()
+    void FollowPlayerEntity()
     {
-        if (_basePlebs.childCount > 0)
-        {
-            Transform closest = _basePlebs.GetChild(0);
-            foreach (Transform t in _basePlebs.transform)
-            {
-                if (Vector3.Distance(transform.position, t.position) <
-                    Vector3.Distance(transform.position, closest.position))
-                {
-                    closest = t;
-                }
-            }
-
-            if (Vector3.Distance(transform.position, GameManager.Instance.player.transform.position) <
-                Vector3.Distance(transform.position, closest.position))
-            {
-                closest = GameManager.Instance.player.transform;
-            }
-
-            _currentFollowingTransform = closest;
-        }
-        else
-        {
-            _currentFollowingTransform = GameManager.Instance.player.transform;
-        }
-
-
-        if (_currentFollowingTransform != null)
-        {
-            //FollowTransform(_currentFollowingTransform);
-            if (Vector3.Distance(transform.position, _currentFollowingTransform.position) <= infectionRadius)
-            {
-                infectionCylinder.localScale +=
-                    new Vector3(Time.deltaTime * infectionSpeed, 0, Time.deltaTime * infectionSpeed);
-            }
-            else
-            {
-                infectionCylinder.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-            }
-
-            _nav.speed = speed;
-            _nav.SetDestination(_currentFollowingTransform.position);
-        }
+        //FollowTransform(_currentFollowingTransform);
+        _nav.speed = speed;
+        _nav.SetDestination(GameManager.Instance.player.transform.position);
+        
     }
 
     void FollowTransform(Transform t)
@@ -124,16 +130,31 @@ public class Pleb : MonoBehaviour
 
     void Infect()
     {
-        GetComponent<MeshRenderer>().sharedMaterial = infectedMaterial;
-        transform.parent = _infectedPlebs.transform;
+        GetComponentInChildren<SkinnedMeshRenderer>().sharedMaterials = new Material[]
+            {GetComponentInChildren<SkinnedMeshRenderer>().sharedMaterials[0], infectedMaterial};
+        if (_infectedPlebs.transform != null)
+            transform.parent = _infectedPlebs.transform;
         speed = infectedSpeed;
         infected = true;
     }
-    
+
     public void OnInfectionCylinderCollided(Collider other)
     {
-        if(other.gameObject.GetComponent<Player>() != null)
-            GameManager.Instance.Restart();
+        if (!infected)
+            return;
+        
+        if (other.gameObject.GetComponent<Player>() != null)
+        {
+            GameManager.Instance.player.OnInfectionCylinderCollided();
+
+            // Reset cylinder size to give player a chance to live after they lose their mask
+            foreach (Transform pleb in _infectedPlebs)
+            {
+                pleb.GetComponent<Pleb>().infectionCylinder.localScale = _cylinderStartScale;
+            }
+
+            infectionCylinder.localScale = _cylinderStartScale;
+        }
         else if (other.gameObject.GetComponent<Pleb>() != null)
             other.gameObject.GetComponent<Pleb>().Infect();
     }
@@ -168,15 +189,19 @@ public class Pleb : MonoBehaviour
             }
 
             _timer += Time.deltaTime;
+
+            Vector3 vec = _transform.position + moveBy;
+            _transform.LookAt(new Vector3(vec.x, _transform.position.y, vec.z));
         }
 
         private void CalculateMoveBy()
         {
-            int direction = Random.value > 0.5f ? -1 : 1;
-            moveBy = Utils.Clamp(Utils.Lerp(new Vector3(Random.value, Random.value, Random.value), 1.0f, 2.0f), 1.0f,
-                         2.0f) *
-                     Time.deltaTime *
-                     _speed * direction;
+            int directionX = Random.value > 0.5f ? -1 : 1;
+            int directionZ = Random.value > 0.5f ? -1 : 1;
+            moveBy = Time.deltaTime * _speed * Utils.Clamp(Utils.Lerp(new Vector3(Random.value, 0, Random.value), 1.0f, 2.0f), 1.0f,
+                         2.0f);
+            
+            moveBy = new Vector3(moveBy.x * directionX, 0, moveBy.z * directionZ);
         }
     }
 }
