@@ -30,19 +30,20 @@ public class GameManager : MonoBehaviour
     public Transform basePlebs;
     public GameObject gameUI;
     public GameObject deathUI;
+    public Score score;
 
     public AudioClip costCovidAudio;
     public AudioClip costCovidAudioIntro;
 
     [HideInInspector] public Player player;
-    [HideInInspector] public Score score;
+    [HideInInspector] public AdManager adManager;
 
     private AudioSource _audioSource;
 
     private void Start()
     {
         player = FindObjectOfType<Player>();
-        score = FindObjectOfType<Score>();
+        adManager = FindObjectOfType<AdManager>();
 
         _audioSource = GetComponent<AudioSource>();
     }

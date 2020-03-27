@@ -15,12 +15,13 @@ public class MainMenu : MonoBehaviour
         Time.timeScale = 0;
         if(PlayerPrefs.GetInt("HighScore") <= 0)
             highScore.gameObject.SetActive(false);
-        highScore.text = "High Score: " + PlayerPrefs.GetInt("HighScore") + "!";
     }
 
     private void Update()
     {
-        if (!GameManager.Instance.running && (Input.touchCount > 0 || Input.GetMouseButton(0)))
+        highScore.text = "High Score: " + PlayerPrefs.GetInt("HighScore") + "!";
+        
+        if (GameManager.Instance.adManager.startupAdShown && !GameManager.Instance.running && (Input.touchCount > 0 || Input.GetMouseButton(0)))
         {
             Time.timeScale = 1;
             GameManager.Instance.running = true;

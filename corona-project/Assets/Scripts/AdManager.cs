@@ -5,33 +5,37 @@ using UnityEngine.Advertisements;
 
 public class AdManager : MonoBehaviour
 {
-    private bool _startupAdShown = false;
-    private bool _queueRewardedVideo = false;
+    public bool startupAdShown = false;
+    public bool queueRewardedVideo = false;
 
     void Update()
     {
-        if (!_startupAdShown)
+        if (!startupAdShown)
         {
             if (Advertisement.IsReady())
             {
-                //Advertisement.Show("StartupAd");
-                _startupAdShown = true;
+                Advertisement.Show("StartupAd", new ShowOptions() {resultCallback = OnStartupAdClosed});
             }
         }
 
-        if (_queueRewardedVideo)
+        if (queueRewardedVideo)
         {
             if (Advertisement.IsReady())
             {
                 Advertisement.Show("rewardedVideo",  new ShowOptions { resultCallback = OnRewardedVideoClosed });
-                _queueRewardedVideo = false;
+                queueRewardedVideo = false;
             }
         }
     }
 
     public void ShowRewardedVideo()
     {
-        _queueRewardedVideo = true;
+        queueRewardedVideo = true;
+    }
+
+    public void OnStartupAdClosed(ShowResult result)
+    {
+        startupAdShown = true;
     }
 
     public void OnRewardedVideoClosed(ShowResult result)

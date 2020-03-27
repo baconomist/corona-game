@@ -52,7 +52,7 @@ MonoBehaviour:
   infectedMaterial: {fileID: 2100000, guid: 7a5193cfddec9d94680a68ececf14a4e, type: 2}
   infectionCylinder: {fileID: 8997292342877903050}
   speed: 5
-  infectedSpeed: 4
+  infectedSpeed: 3
   infectionRadius: 15
   infectionSpeed: 5
   infected: 0
